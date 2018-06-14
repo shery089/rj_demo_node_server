@@ -121,32 +121,33 @@ router.get('/user_bulk_insertion', function (req, res, next) {
 
         users_data_count = users_data_count[0];
         if(users_data_count > 0) {
-            // for(var i = 0; i < users_data_count; i += 50) {
-            //     if(i >= 50) {
-                if(users_data_count >= 50) {
-                    // let page = i/50;      // page number
-                    let page = 1;      // page number
-                    let pages = Math.ceil(users_data_count / limit);
-                    offset = limit * (page - 1);
-                    limit_str = "LIMIT " + offset + ", " + limit;
-                }
-                else {
-                    limit_str = "";
-                }
+            for (var i = 0; i < users_data_count; i += 50) {
+                if (i >= 50) {
+                    if (users_data_count >= 50) {
+                        let page = i / 50;      // page number
+                        // let page = 1;      // page number
+                        let pages = Math.ceil(users_data_count / limit);
+                        offset = limit * (page - 1);
+                        limit_str = "LIMIT " + offset + ", " + limit;
+                    }
+                    else {
+                        limit_str = "";
+                    }
 
-                sequelize.query("SELECT `users`.`id`, `users`.`company_name`, `users`.`email`, `users`.`user_logo`, `users`.`date_created` FROM users" +
-                    " WHERE `users`.`user_type` = 2 ORDER BY `users`.`id` DESC " + limit_str, { type: sequelize.QueryTypes.SELECT })
-                    .then(function(users){
-                        elastic_client.bulkInsertion(users).then(function (data) {
-                            res.json(data);
-                        });
-                    })
-                    .catch(error => res.json({
-                        error: true,
-                        data: [],
-                        error_message: error
-                    }));
-            //} // for loop
+                    sequelize.query("SELECT `users`.`id`, `users`.`company_name`, `users`.`email`, `users`.`user_logo`, `users`.`date_created` FROM users" +
+                        " WHERE `users`.`user_type` = 2 ORDER BY `users`.`id` DESC " + limit_str, {type: sequelize.QueryTypes.SELECT})
+                        .then(function (users) {
+                            elastic_client.bulkInsertion(users).then(function (data) {
+                                // res.json(data);
+                            });
+                        })
+                        .catch(error => res.json({
+                            error: true,
+                            data: [],
+                            error_message: error
+                        }));
+                } // for loop
+            }
         }
         else {
             res.json({
