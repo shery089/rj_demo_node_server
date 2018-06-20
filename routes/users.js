@@ -6,12 +6,13 @@ var users = model.users;
 var sequelize = model.sequelize;
 var config = require(__dirname + '/../config/config.json');
 var elastic_client = require('../config/es_connection');
+
 //E1: Get users by pagination
-/*
+
 router.get('/:page', function (req, res, next) {
     let limit = config.records_limit;   // number of records per page
     let offset = 0;
-    users.findOne(({
+    users.findOne({
         attributes: [[sequelize.fn('COUNT', sequelize.col('id')), 'count']],
         where:{
             user_type: 1
@@ -60,7 +61,7 @@ router.get('/:page', function (req, res, next) {
         error_message: error
     }));
 });
-*/
+
 
 //E2: GET users by pagination and one JOIN
 /*router.get('/:page', function (req, res, next) {
@@ -202,6 +203,43 @@ router.get('/insert_user', function (req, res, next) {
     }).catch(function (e) {
         res.json(e);
     });
+});
+
+// E3: Insert User
+router.post('/insert',function (req, res, next) {
+
+    /**
+     * Validations
+     */
+    req.checkBody('company_name').trim().escape().isLength({ min: 3, max: 255 }).withMessage('Name should be at least ' +
+        '3 chars and at most 255 chars').matches(/^[a-z-/\s]+$/i).withMessage('Only alphabet and hyphens characters are allowed');
+
+    if(req.checkBody('email').exists){
+        req.checkBody('email').trim().escape().isEmail().withMessage('Invalid email');
+    }
+
+    var errors = req.validationErrors();
+    if(errors){
+        res.json(errors);
+    }
+    else {
+        users.create({
+            email: req.body.email,
+            company_name: req.body.company_name,
+            // created_at: new Date(),
+            // updated_at: new Date()
+        })
+            .then(cause => res.status(201).json({
+                error: false,
+                data: cause,
+                message: 'New User created.'
+            }))
+            .catch(error => res.json({
+                error: true,
+                data: [],
+                message: error
+            }));
+    }
 });
 
 module.exports = router;
